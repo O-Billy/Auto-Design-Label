@@ -10,10 +10,8 @@ publish/
 .vs/
 *.userprefs
 
-# ---- Archives / large third-party redistributables (KHONG commit) ----
-# CodeSoft 6 installer + ASP.NET Core Hosting Bundle - tai rieng khi deploy, xem Deploy/CMD.md
-Deploy/*.zip
-Deploy/*.exe
+# ---- Archives ----
+# Deploy/*.zip + Deploy/*.exe (bo cai CS6 + Hosting Bundle) duoc luu qua Git LFS - xem .gitattributes
 *.7z
 AutoDesignLabel-csharp.zip
 
