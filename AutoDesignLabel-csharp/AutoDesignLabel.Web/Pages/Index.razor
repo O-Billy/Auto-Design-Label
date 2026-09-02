@@ -1,0 +1,970 @@
+@page "/"
+@using System.Globalization
+@using System.Text.Json
+@using UglyToad.PdfPig
+@inject NavigationManager Nav
+
+<PageTitle>Auto Design Label</PageTitle>
+
+<LoadingOverlay Visible="_loadingVisible" Percent="_loadingPercent" Label="@_loadingLabel" />
+
+<div class="mes">
+<div class="accent-bar"></div>
+
+<AutoDesignLog Visible="_showTraceLog" Doc="_doc" Selected="_selectedLabel"
+               OnClose="() => _showTraceLog = false"
+               DownloadLdm="DownloadLdm"
+               DownloadTrace="DownloadTraceLog" />
+
+<header class="app-header">
+    <div class="brand">
+        <div class="brand-mark">A</div>
+        <div class="brand-text">
+            <h1>AUTO DESIGN LABEL</h1>
+            <div class="crumb">Fii CNSBG - Billy Su</div>
+        </div>
+    </div>
+    <div class="header-meta">
+        <div class="doc-chip">
+            @if (_doc is not null)
+            {
+                <span>@_doc.DocumentId &middot; <b>rev @_doc.Revision</b></span>
+            }
+            else
+            {
+                <span>No document loaded</span>
+            }
+        </div>
+    </div>
+</header>
+
+<div class="stepper">
+    <div class="step @(_doc is not null ? "is-done" : "")">
+        <div class="step-link">
+            <div class="step-num">@(_doc is not null ? "✓" : "1")</div>
+            <div class="step-body">
+                <span class="step-role auto">System</span>
+                <div class="step-title">1. Upload PMD</div>
+                <div class="step-sub">@(_uploadedFileName ?? "No file selected")</div>
+            </div>
+        </div>
+    </div>
+    <div class="step-connector @(_doc is not null ? "is-done" : "")"></div>
+
+    <div class="step @(_doc is not null ? "is-done" : "")">
+        <div class="step-link">
+            <div class="step-num">@(_doc is not null ? "✓" : "2")</div>
+            <div class="step-body">
+                <span class="step-role auto">System</span>
+                <div class="step-title">2. Auto Design</div>
+                <div class="step-sub">@(_doc is not null ? $"{PrintableLabels.Count} labels · {TotalElementCount} elements" : "—")</div>
+            </div>
+        </div>
+    </div>
+    <div class="step-connector @(_doc is not null ? "is-active" : "")"></div>
+
+    <div class="step @(_doc is not null ? "is-active" : "")">
+        <div class="step-link">
+            <div class="step-num">3</div>
+            <div class="step-body">
+                <span class="step-role user">Needs your review</span>
+                <div class="step-title">3. Review</div>
+                <div class="step-sub">@(_doc is not null ? $"{PrintableOpenIssues.Count} PMD issues · {PrinterSpecRows.Count()} printer specs" : "—")</div>
+            </div>
+        </div>
+    </div>
+    <div class="step-connector"></div>
+
+    <div class="step @(HasBlocker ? "is-blocked" : "") is-clickable" id="stepExport">
+        <a class="step-link" href="#appFooter" @onclick="PulseFooterAndScroll">
+            <div class="step-num">4</div>
+            <div class="step-body">
+                <span class="step-role auto">System</span>
+                <div class="step-title">4. Export Label File</div>
+                <div class="step-sub">
+                    @(_doc is null ? "—" : HasBlocker ? $"Waiting on {BlockerIssues.Count} blocker(s)"
+                        : NeedsLayoutApproval ? "Confirm auto-layout to export" : "Ready to export")
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+@if (ShowSpecEditor)
+{
+    <section class="spec-review">
+        <div class="spec-head">
+            <div>
+                <h2>Review auto-extracted content</h2>
+                <p class="spec-sub">PMD content-only (PowerPoint &rarr; PDF) &mdash; no vector coordinates.
+                    @_classifyInfo Sample values are <b>auto-filled</b> from the label barcodes (exact) and
+                    OCR (needs checking &mdash; amber/red dots). Correct the wrong ones, then generate the
+                    layout. Font / barcode type / position are reviewable defaults, not spec violations.</p>
+            </div>
+            <button class="btn btn-primary" @onclick="GenerateFromSpec" disabled="@_loadingVisible">
+                Generate auto-layout &rarr;
+            </button>
+        </div>
+
+        @foreach (var cl in _spec!.Labels)
+        {
+            <div class="spec-label">
+                <div class="spec-lbl-head">
+                    <b>@cl.Name</b>
+                    <label>W <input type="number" step="0.1" @bind="cl.WidthMm" /></label>
+                    <label>H <input type="number" step="0.1" @bind="cl.HeightMm" /> mm</label>
+                    <label>Archetype
+                        <select @bind="cl.Archetype">
+                            <option value="simple-id">simple-id</option>
+                            <option value="packing">packing</option>
+                            <option value="lit-kit">lit-kit</option>
+                            <option value="unknown">unknown</option>
+                        </select>
+                    </label>
+                </div>
+
+                @if (cl.Fields.Count == 0)
+                {
+                    <div class="empty-tab">No fields detected from callouts &mdash; add them in CodeSoft after generating, or fix the PMD.</div>
+                }
+                else
+                {
+                    <table class="data-table spec-table">
+                        <thead><tr>
+                            <th style="width:26px"></th>
+                            <th style="width:120px">Caption</th><th style="width:120px">Token</th>
+                            <th style="width:92px">Kind</th><th>Sample value (auto-filled &mdash; correct if wrong)</th>
+                            <th style="width:120px">Source</th>
+                        </tr></thead>
+                        <tbody>
+                            @foreach (var f in cl.Fields)
+                            {
+                                <tr class="conf-@ConfClass(f)">
+                                    <td><span class="conf-dot" title="@ConfTitle(f)"></span></td>
+                                    <td><input @bind="f.Caption" /></td>
+                                    <td><input @bind="f.Token" /></td>
+                                    <td>
+                                        <select @bind="f.Kind">
+                                            <option value="Text">Text</option>
+                                            <option value="Barcode">Barcode</option>
+                                            <option value="Table">Table</option>
+                                        </select>
+                                    </td>
+                                    <td><input class="wide" @bind="f.SampleValue" placeholder="(fill in / from data feed at print time)" /></td>
+                                    <td class="ref-tag">
+                                        @f.Source@(f.DataIdentifier is not null ? $" · DI {f.DataIdentifier}" : "")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    @if (cl.KitRows.Count > 0)
+                    {
+                        <div class="spec-note"><b>Kit table (@cl.KitRows.Count rows, auto-resolved):</b>
+                            @string.Join(" · ", cl.KitRows.Select(r => $"{r.PartNumber}→{(string.IsNullOrEmpty(r.Serial) ? "?" : r.Serial)}"))</div>
+                    }
+                }
+
+                @if (cl.OcrRawLines.Count > 0)
+                {
+                    <div class="ocr-hint"><b>OCR read:</b> @string.Join("  |  ", cl.OcrRawLines)</div>
+                }
+                @foreach (var note in cl.Notes)
+                {
+                    <div class="spec-note">@note</div>
+                }
+            </div>
+        }
+    </section>
+}
+else
+{
+<main class="workspace">
+
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar">
+        <div class="side-section">
+            <h2>Source File</h2>
+            @if (_doc is not null)
+            {
+                <div class="file-row">
+                    <div class="file-icon">PDF</div>
+                    <div class="file-name">@_uploadedFileName<br>@(_uploadedPageCount is not null ? $"{_uploadedPageCount} pages · " : "")@FormatSize(_uploadedFileSizeBytes)</div>
+                </div>
+                <span class="offline-pill">@(IsAutoLayout ? "Content-only · auto-layout + OCR" : "Vector PMD · exact coordinates")</span>
+                @if (_classifyInfo is not null)
+                {
+                    <div class="file-empty" style="margin-top:6px">@_classifyInfo</div>
+                }
+            }
+            else
+            {
+                <div class="file-row">
+                    <div class="file-icon">PDF</div>
+                    <div class="file-empty">No PMD.pdf selected. Extraction runs 100% offline on this server (rule-based, no AI).</div>
+                </div>
+            }
+            <div class="file-picker">
+                <InputFile OnChange="OnFileSelected" accept=".pdf" disabled="@_loadingVisible" />
+            </div>
+        </div>
+
+        <div class="side-section">
+            <h2>Labels (@PrintableLabels.Count)</h2>
+        </div>
+        <div class="label-list">
+            @foreach (var label in PrintableLabels)
+            {
+                var isSelected = label.Id == _selectedLabelId;
+                var render = _labelRenderCache.GetValueOrDefault(label.Id);
+                var warnCount = render?.LintRows.Count(r => r.Status != LintStatus.Ok) ?? 0;
+                <button type="button" class="label-card @(isSelected ? "active" : "")" @onclick="() => SelectLabel(label.Id)">
+                    <div class="lc-swatch"></div>
+                    <div class="lc-body">
+                        <div class="lc-title">@label.Name</div>
+                        <div class="lc-meta">@label.WidthMm.ToString("0.#") &times; @label.HeightMm.ToString("0.#") mm &middot; @label.Elements.Count elements</div>
+                        <div class="lc-pn">P/N @label.PartNumber</div>
+                        <div class="lc-badges">
+                            @if (label.LayoutSource == LayoutSource.Auto)
+                            {
+                                <span class="pill auto-layout" title="Layout tu sinh - can review thiet ke">Auto-layout</span>
+                            }
+                            @if (render?.RenderError is not null)
+                            {
+                                <span class="pill blocker">Render error</span>
+                            }
+                            else if (warnCount > 0)
+                            {
+                                <span class="pill warn">@warnCount warning(s)</span>
+                            }
+                            else
+                            {
+                                <span class="pill ok">OK</span>
+                            }
+                        </div>
+                    </div>
+                </button>
+            }
+        </div>
+
+        <div class="side-footer">
+            LDM schema @(_doc?.SchemaVersion ?? "1.0") &middot; coordinates in mm<br>
+            Layout inferred from PMD &mdash; verify against original artwork.
+        </div>
+    </aside>
+
+    <!-- ================= CANVAS ================= -->
+    <section class="canvas-col">
+        <div class="canvas-toolbar">
+            <div class="ct-title">
+                <h3>
+                    @(_selectedLabel?.Name ?? "No label selected")
+                    @if (_selectedLabel?.LayoutSource == LayoutSource.Auto)
+                    {
+                        <span class="pill auto-layout">Auto-layout &mdash; review design</span>
+                    }
+                </h3>
+                @if (_selectedLabel is not null)
+                {
+                    <span>@_selectedLabel.PartNumber &middot; @_selectedLabel.WidthMm.ToString("0.#") &times; @_selectedLabel.HeightMm.ToString("0.#") mm</span>
+                }
+            </div>
+            <div class="ct-controls">
+                <div class="zoom-group">
+                    <button @onclick="ZoomOut" aria-label="Zoom out">&minus;</button>
+                    <div class="zoom-val">@_zoomPercent%</div>
+                    <button @onclick="ZoomIn" aria-label="Zoom in">+</button>
+                </div>
+                <div class="tool-sep"></div>
+                <button class="icon-btn" title="Reset to 100%" @onclick="ResetZoom">&#10021;</button>
+                @if (_pdfDataUrl is not null)
+                {
+                    <a class="icon-btn" href="@_pdfDataUrl" target="_blank" title="Open PDF in new tab">&#8663;</a>
+                }
+            </div>
+        </div>
+
+        <div class="canvas-viewport">
+            <span class="canvas-tag">True 1:1 scale (mm) &middot; server-side PDF render</span>
+
+            @if (_selectedLabel is not null && _pdfDataUrl is not null)
+            {
+                var wPx = CanvasWidthPx(_selectedLabel).ToString(CultureInfo.InvariantCulture);
+                var hPx = CanvasHeightPx(_selectedLabel).ToString(CultureInfo.InvariantCulture);
+                // Bo goc die-cut: doi mm -> px theo cung ty le canvas (TargetCanvasWidthPx / WidthMm).
+                // Khong co ban kinh (goc vuong) thi giu 4px bo nhe mac dinh cua .canvas-sheet.
+                var radMmPx = _selectedLabel.CornerRadiusMm / _selectedLabel.WidthMm * CanvasWidthPx(_selectedLabel);
+                var radPx = (radMmPx > 0.5 ? radMmPx : 4).ToString("0.##", CultureInfo.InvariantCulture);
+                <div class="canvas-sheet-wrap" style="transform:scale(@TotalScaleCss(_selectedLabel))">
+                    <div class="ruler-grid" style="grid-template-columns:22px @(wPx)px;">
+                        <div class="ruler-corner"></div>
+                        <div class="ruler-top" style="width:@(wPx)px;">
+                            @foreach (var x in RulerTicks(_selectedLabel.WidthMm))
+                            {
+                                <span class="ruler-tick" style="left:@((x / _selectedLabel.WidthMm * 100).ToString(CultureInfo.InvariantCulture))%">@x</span>
+                            }
+                        </div>
+                        <div class="ruler-left" style="height:@(hPx)px;">
+                            @foreach (var y in RulerTicks(_selectedLabel.HeightMm))
+                            {
+                                <span class="ruler-tick" style="top:@((y / _selectedLabel.HeightMm * 100).ToString(CultureInfo.InvariantCulture))%">@y</span>
+                            }
+                        </div>
+                        <div class="canvas-sheet" style="width:@(wPx)px; height:@(hPx)px; border-radius:@(radPx)px;">
+                            <iframe title="@_selectedLabel.Name" src="@EmbedPdfUrl(_selectedLabel)"
+                                     style="width:calc(100% + 30px); height:calc(100% + 30px); top:50%; left:50%; transform:translate(-50%,-50%);"></iframe>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (_selectedLabel is not null)
+            {
+                <div class="canvas-empty">
+                    This label has no extracted elements yet &mdash;
+                    @(_labelRenderCache.GetValueOrDefault(_selectedLabel.Id)?.RenderError ?? "manual layout needed.")
+                </div>
+            }
+            else
+            {
+                <div class="canvas-empty">
+                    @(_doc is null ? "Upload a PMD.pdf on the left to get started." : "Select a label on the left to preview.")
+                </div>
+            }
+
+            @if (_selectedLabel is not null)
+            {
+                <div class="lcd-readout">
+                    <div class="lcd-field"><span class="lcd-label">W</span><span class="lcd-value">@_selectedLabel.WidthMm.ToString("0.0") mm</span></div>
+                    <div class="lcd-field"><span class="lcd-label">H</span><span class="lcd-value">@_selectedLabel.HeightMm.ToString("0.0") mm</span></div>
+                </div>
+            }
+        </div>
+
+        <!-- ============ TABS ============ -->
+        <div class="tabs-panel">
+            <div class="tabs-bar">
+                <button class="tab-btn @(_activeTab == "issues" ? "active" : "")" @onclick='() => SetTab("issues")'>
+                    PMD Issues <span class="count">@PrintableOpenIssues.Count</span>
+                </button>
+                <button class="tab-btn @(_activeTab == "lint" ? "active" : "")" @onclick='() => SetTab("lint")'>
+                    Printer Specs <span class="count">@PrinterSpecRows.Count()</span>
+                </button>
+                <button class="tab-btn @(_activeTab == "props" ? "active" : "")" @onclick='() => SetTab("props")'>
+                    Element Properties
+                </button>
+            </div>
+
+            @if (_activeTab == "issues")
+            {
+                <div class="tab-content">
+                    @if (PrintableOpenIssues.Count == 0)
+                    {
+                        <div class="empty-tab">@(_doc is null ? "No document loaded." : "No issues recorded.")</div>
+                    }
+                    else
+                    {
+                        <table class="data-table">
+                            <thead><tr><th style="width:70px">Ref</th><th style="width:90px">Severity</th><th>Description</th></tr></thead>
+                            <tbody>
+                                @foreach (var issue in PrintableOpenIssues)
+                                {
+                                    <tr>
+                                        <td class="ref-tag">@issue.Ref</td>
+                                        <td><span class="pill @issue.Severity.ToLowerInvariant()">@issue.Severity</span></td>
+                                        <td class="issue-text">@issue.Text</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            }
+            else if (_activeTab == "lint")
+            {
+                <div class="tab-content">
+                    @if (!PrinterSpecRows.Any())
+                    {
+                        <div class="empty-tab">@(_doc is null ? "No document loaded." : "No barcode/QR elements to compute printer specs for.")</div>
+                    }
+                    else
+                    {
+                        <table class="data-table">
+                            <thead><tr><th style="width:90px">Label</th><th style="width:80px">Type</th><th>Specs by DPI</th></tr></thead>
+                            <tbody>
+                                @foreach (var (label, row) in PrinterSpecRows)
+                                {
+                                    <tr>
+                                        <td class="ref-tag">@label.Id</td>
+                                        <td class="ref-tag">@row.Kind</td>
+                                        <td class="detail-mono">@row.Detail</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="tab-content">
+                    @if (_selectedLabel is null)
+                    {
+                        <div class="empty-tab">Select a label on the left to view its variables.</div>
+                    }
+                    else if (SelectedLabelVariables.Count == 0)
+                    {
+                        <div class="empty-tab">Label "@_selectedLabel.Name" uses no {{TOKEN}} variables - all content is static text.</div>
+                    }
+                    else
+                    {
+                        <table class="data-table">
+                            <thead><tr><th style="width:150px">Variable</th><th style="width:90px">Source</th><th style="width:200px">Sample value (edit &amp; re-render)</th><th>Note</th></tr></thead>
+                            <tbody>
+                                @foreach (var v in SelectedLabelVariables)
+                                {
+                                    <tr>
+                                        <td class="ref-tag">{{@v.Token}}</td>
+                                        <td class="ref-tag">@v.Source</td>
+                                        <td>
+                                            <input class="wide" value="@_sampleData.GetValueOrDefault(v.Token)"
+                                                   @onchange="@(ev => UpdateSample(v.Token, ev.Value?.ToString()))" />
+                                        </td>
+                                        <td class="issue-text">@(v.Note ?? "")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+</main>
+}
+
+@if (_errorMessage is not null)
+{
+    <div class="banner-error" style="margin:0 22px;">@_errorMessage</div>
+}
+
+@if (_doc is not null && _renderPlaceholders.Count > 0)
+{
+    <div class="banner-warn" style="margin:6px 22px;">
+        Missing sample values (showing <code>&lt;TOKEN&gt;</code> placeholders in the proof):
+        @string.Join(", ", _renderPlaceholders). Fill them in the <b>Element Properties</b> tab or the data feed.
+    </div>
+}
+
+<footer class="app-footer @(_footerPulse ? "pulse" : "")" id="appFooter">
+    <div class="nameplate">
+        <div class="field"><span>Document</span><b>@(_doc?.DocumentId ?? "—")</b></div>
+        <div class="field"><span>Revision</span><b>@(_doc?.Revision ?? "—")</b></div>
+        <div class="field"><span>LDM schema</span><b>@(_doc?.SchemaVersion ?? "—")</b></div>
+        <div class="field"><span>Updated</span><b>@(_lastUpdated?.ToString("yyyy-MM-dd HH:mm") ?? "—")</b></div>
+    </div>
+    <div class="export-zone">
+        @if (HasBlocker)
+        {
+            <div class="export-warning">
+                <span>&#9888;</span> @BlockerIssues.Count Blocker-level issue(s) remaining (@string.Join(", ", BlockerIssues.Select(i => i.Ref))) &mdash; resolve before exporting the label file
+            </div>
+        }
+        @if (_labExportError is not null)
+        {
+            <div class="banner-error">@_labExportError</div>
+        }
+        @if (_zplExportError is not null)
+        {
+            <div class="banner-error">@_zplExportError</div>
+        }
+        @if (IsAutoLayout)
+        {
+            <label class="approve-check">
+                <input type="checkbox" @bind="_layoutApproved" />
+                Tôi đã xem lại bố cục auto-layout so với artwork đã duyệt và xác nhận cho xuất file.
+            </label>
+        }
+        <div class="footer-actions">
+            @if (_spec is not null && _doc is not null)
+            {
+                <button class="btn btn-outline" disabled="@_loadingVisible" @onclick="BackToSpecEdit">
+                    &larr; Edit content spec
+                </button>
+            }
+            <button class="btn btn-outline" disabled="@(_doc is null || _loadingVisible)"
+                    title="View the trace log: what the tool extracted from the PMD and how it built the label"
+                    @onclick="() => _showTraceLog = true">
+                <span class="btn-ic">&#9776;</span> Trace Log
+            </button>
+            <button class="btn btn-primary" disabled="@(_pdfDataUrl is null || HasBlocker || _loadingVisible || NeedsLayoutApproval)"
+                    title="@(NeedsLayoutApproval ? "Xác nhận bố cục auto-layout trước khi xuất" : "Resolve all blockers in the Review step before exporting")"
+                    @onclick="ExportLab">
+                <span class="btn-ic">&#11015;</span> Export .lab (CodeSoft 6)
+            </button>
+            <button class="btn btn-primary" disabled="@(_pdfDataUrl is null || HasBlocker || _loadingVisible || NeedsLayoutApproval)"
+                    title="@(NeedsLayoutApproval ? "Xác nhận bố cục auto-layout trước khi xuất" : "Resolve all blockers in the Review step before exporting")"
+                    @onclick="ExportZpl">
+                <span class="btn-ic">&#11015;</span> Export ZPL
+            </button>
+        </div>
+    </div>
+</footer>
+</div>
+
+@code {
+    private LdmDocument? _doc;
+    private string? _errorMessage;
+    private string? _selectedLabelId;
+    private Dictionary<string, string> _sampleData = new();
+    private string? _labExportError;
+    private string? _zplExportError;
+    private string? _pdfDataUrl;
+
+    // PMD content-only (PPT -> PDF): "content spec" nguoi dung review/sua truoc khi sinh layout.
+    private ContentSpec? _spec;
+    private string? _classifyInfo;
+    private bool _layoutApproved;
+    private List<string> _renderPlaceholders = new();
+
+    private bool IsAutoLayout => _doc?.Labels.Any(l => l.LayoutSource == LayoutSource.Auto) ?? false;
+    private bool NeedsLayoutApproval => IsAutoLayout && !_layoutApproved;
+    private bool ShowSpecEditor => _spec is not null && _doc is null;
+
+    private string? _uploadedFileName;
+    private long _uploadedFileSizeBytes;
+    private int? _uploadedPageCount;
+    private DateTime? _lastUpdated;
+
+    private string _activeTab = "issues";
+    private int _zoomPercent = 100;
+    private bool _footerPulse;
+    private bool _showTraceLog;
+
+    private sealed record LabelRender(string? PdfDataUrl, List<LintRow> LintRows, string? RenderError);
+    private Dictionary<string, LabelRender> _labelRenderCache = new();
+
+    // Popup loading noi giua man hinh - xem LoadingOverlay.razor. % la uoc luong tang dan muot
+    // (khong co moc tien do that tu PmdExtractor/LabFileGenerator de bao chinh xac), chot 100% khi
+    // tac vu thuc su xong.
+    private bool _loadingVisible;
+    private int _loadingPercent;
+    private string _loadingLabel = "";
+
+    private LabelDef? _selectedLabel => _doc?.Labels.FirstOrDefault(l => l.Id == _selectedLabelId);
+
+    // Quy tac nghiep vu: chi hien danh sach de review/in nhung nhan ma PMD co dinh nghia rieng
+    // "Label Font Style & Size" (PmdExtractor da danh dau qua RequiresAutoDesign) - decal tinh dan
+    // san (vd Screw VOID, Safety seal) khong co spec typographic nen ngoai pham vi auto-design.
+    private List<LabelDef> PrintableLabels =>
+        _doc?.Labels.Where(l => l.RequiresAutoDesign).ToList() ?? new();
+
+    private int TotalElementCount => PrintableLabels.Sum(l => l.Elements.Count);
+
+    private List<OpenIssue> PrintableOpenIssues
+    {
+        get
+        {
+            if (_doc is null) return new();
+            var excludedIds = _doc.Labels.Where(l => !l.RequiresAutoDesign).Select(l => l.Id).ToHashSet();
+            return _doc.OpenIssues
+                .Where(i => !excludedIds.Any(id => i.Text.StartsWith($"[{id}]")))
+                // "Chua xac dinh duoc noi dung" (barcode/QR) chi phan anh viec PmdExtractor chua tu
+                // xac dinh duoc token nao gan voi phan tu do LUC TRICH XUAT - o buoc nay (truoc khi
+                // merge du lieu that) noi dung van chi la du lieu mau, khong tinh la loi/canh bao can
+                // xu ly ngay (nguoi dung xac nhan bo qua o giai doan nay).
+                .Where(i => !i.Text.Contains("chua xac dinh duoc noi dung"))
+                .ToList();
+        }
+    }
+
+    // Blocker = van de nghiem trong nhat theo quy uoc CLAUDE.md ("phai duoc giai quyet voi PM truoc
+    // khi san xuat") - UI chan cung nut xuat file khi con blocker chua xu ly, buoc nguoi dung phai
+    // thay doi lieu hoac xac nhan voi PM truoc khi tao ra file dua vao san xuat.
+    private List<OpenIssue> BlockerIssues =>
+        PrintableOpenIssues.Where(i => string.Equals(i.Severity, "blocker", StringComparison.OrdinalIgnoreCase)).ToList();
+    private bool HasBlocker => BlockerIssues.Count > 0;
+
+
+    // "Thong so may in": tai su dung dung phep tinh cua Linter cho barcode128/QR (bo rong toi thieu
+    // theo 203/300dpi da co san trong LintRow.Detail) nhung trinh bay nhu THONG SO trung tinh thay
+    // vi canh bao/loi - day la thong tin ky thuat gan voi may in (X-dimension, module size theo
+    // DPI), khong phai loi thiet ke can sua. Loai bo text-overflow/collision (khong lien quan may
+    // in) theo dung yeu cau thay the tab nay.
+    private IEnumerable<(LabelDef Label, LintRow Row)> PrinterSpecRows =>
+        PrintableLabels
+            .Where(l => _labelRenderCache.ContainsKey(l.Id))
+            .SelectMany(l => _labelRenderCache[l.Id].LintRows
+                .Where(r => r.Kind == "code128" || r.Kind == "qr")
+                .Select(r => (Label: l, Row: r)));
+
+    // Danh sach {{TOKEN}} duoc dung trong nhan dang chon - CUNG logic voi
+    // LabFileGenerator.CreateFreeVariables (bo qua element 'repeat' va du lieu QR, vi 2 loai nay
+    // duoc bake thanh text tinh chu khong tro thanh Free Variable song trong file .lab) de danh
+    // sach hien thi dung khop voi bien SE co trong file xuat ra.
+    private List<(string Token, string Source, string? Sample, string? Note)> SelectedLabelVariables
+    {
+        get
+        {
+            if (_selectedLabel is null || _doc is null) return new();
+            var tokens = new SortedSet<string>(StringComparer.Ordinal);
+            foreach (var el in _selectedLabel.Elements.Where(e => e.Type != "repeat"))
+            {
+                if (el.Text is not null) foreach (var t in Binder.TokenNames(el.Text)) tokens.Add(t);
+                if (el.Data is not null && el.Type != "qr") foreach (var t in Binder.TokenNames(el.Data)) tokens.Add(t);
+            }
+            return tokens.Select(t =>
+            {
+                _doc.Fields.TryGetValue(t, out var f);
+                return (Token: t, Source: f?.Source ?? "unknown", Sample: f?.Sample, Note: f?.Note);
+            }).ToList();
+        }
+    }
+
+    // An toolbar/khung thumbnail mac dinh cua trinh xem PDF, va bat PDF tu RENDER THANG o dung do
+    // phan giai lon (khong dung CSS transform:scale de phong to) - da thu qua 3 phuong an va chi
+    // phuong an nay dat ca 3 yeu cau cung luc (da kiem chung bang screenshot thuc te):
+    //   - KHONG dung view=FitH: gay "vien den" (trinh xem PDF tu can giua khi ty le lech du chi 1
+    //     chut, lo nen toi rieng cua no ra ngoai nhan that - nguoi dung da phan anh dung diem nay).
+    //   - KHONG dung CSS transform:scale() de phong to: PDF bi rasterize san o kich thuoc NHO (that)
+    //     TRUOC, CSS chi keo gian anh bitmap co san -> vo hat/mo ro ret voi he so phong lon (nguoi
+    //     dung da phan anh dung diem nay, nhat la nhan nho nhu Device can phong ~4 lan).
+    //   - Dung zoom=<%> CHINH XAC (tinh tu BaseScale) de trinh xem PDF tu rasterize THANG o do phan
+    //     giai lon -> luon net, khong qua CSS. Zoom nay CO DINH theo tung nhan (khong doi theo nut
+    //     zoom +/- cua nguoi dung - xem TotalScaleCss).
+    private const double CssPxPerInch = 96.0;
+    private const double MmPerInch = 25.4;
+    private const double TargetCanvasWidthPx = 820;
+    private static double NaturalWidthPx(LabelDef l) => l.WidthMm / MmPerInch * CssPxPerInch;
+    // He so 1.03 (3%) la bien an toan: cac trinh xem PDF nhung khac nhau (Chrome, Edge WebView2 -
+    // vd VS Code Simple Browser) do "actual size" hoi khac nhau chut it, du cung khai bao zoom=
+    // giong het nhau - neu tinh dung 100% khop khung, moi truong "do nho hon 1 chut" se lo nen toi
+    // rieng cua trinh xem PDF ra ngoai nhan (da xac nhan qua bao cao thuc te). Render nhinh lon hon
+    // khung 3% roi cat deu 4 canh (xem .canvas-sheet/iframe trong site.css) dam bao luon lap kin.
+    private static double BaseScale(LabelDef l) => TargetCanvasWidthPx / NaturalWidthPx(l) * 1.03;
+
+    private string? EmbedPdfUrl(LabelDef l) => _pdfDataUrl is null ? null :
+        _pdfDataUrl + $"#toolbar=0&navpanes=0&scrollbar=0&zoom={(BaseScale(l) * 100).ToString("0.##", CultureInfo.InvariantCulture)}";
+
+    private static double CanvasWidthPx(LabelDef l) => TargetCanvasWidthPx;
+    private static double CanvasHeightPx(LabelDef l) => TargetCanvasWidthPx * l.HeightMm / l.WidthMm;
+
+    // Nut zoom +/- cua nguoi dung (40%-220%) van dung CSS transform:scale binh thuong - chi anh
+    // huong khi nguoi dung CHU DONG phong to/thu nho de xem chi tiet (mac dinh 100% = khong scale
+    // them, giu nguyen do net da dat duoc qua zoom= o tren).
+    private string TotalScaleCss(LabelDef l) => (_zoomPercent / 100.0).ToString(CultureInfo.InvariantCulture);
+
+    // Danh sach moc thuoc (0,10,20...mm) de ve thuoc do doc/ngang quanh canvas - giong phong cach
+    // ruler trong file thiet ke goc (auto-design-label-mes.html).
+    private static IEnumerable<int> RulerTicks(double dimMm)
+    {
+        for (var v = 0; v <= (int)Math.Floor(dimMm); v += 10) yield return v;
+    }
+
+    private static string FormatSize(long bytes) =>
+        bytes < 1024 * 1024 ? $"{bytes / 1024.0:0.0} KB" : $"{bytes / 1024.0 / 1024.0:0.0} MB";
+
+    private void SetTab(string tab) => _activeTab = tab;
+
+    private void ZoomIn() => _zoomPercent = Math.Min(220, _zoomPercent + 10);
+    private void ZoomOut() => _zoomPercent = Math.Max(40, _zoomPercent - 10);
+    private void ResetZoom() => _zoomPercent = 100;
+
+    private async Task PulseFooterAndScroll()
+    {
+        _footerPulse = true;
+        StateHasChanged();
+        await Task.Delay(1100);
+        _footerPulse = false;
+        StateHasChanged();
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        _errorMessage = null;
+        _doc = null;
+        _spec = null;
+        _classifyInfo = null;
+        _pdfDataUrl = null;
+        _layoutApproved = false;
+        _labelRenderCache.Clear();
+
+        await RunWithProgress("Analysing PMD...", async () =>
+        {
+            try
+            {
+                var file = e.File;
+                using var stream = file.OpenReadStream(maxAllowedSize: 30_000_000);
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+
+                var bytes = ms.ToArray();
+                _uploadedFileName = file.Name;
+                _uploadedFileSizeBytes = bytes.LongLength;
+                try { using var pdf = PdfDocument.Open(bytes); _uploadedPageCount = pdf.NumberOfPages; }
+                catch { _uploadedPageCount = null; }
+
+                var cls = await Task.Run(() => PmdClassifier.Classify(bytes, file.Name));
+                _classifyInfo = cls.Reason;
+
+                if (cls.LooksVector)
+                {
+                    _doc = cls.VectorDoc!;
+                    FinishDocLoad();
+                }
+                else
+                {
+                    // Content-only: OCR (offline) + trich content spec -> cho user review/sua truoc
+                    // khi sinh layout.
+                    IPmdImageReader reader = new NullImageReader();
+                    if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041))
+                        reader = WindowsImageReader.TryCreate() as IPmdImageReader ?? new NullImageReader();
+                    _spec = await Task.Run(() => new ContentSpecExtractor(reader).Extract(bytes, file.Name));
+                }
+            }
+            catch (Exception ex)
+            {
+                _errorMessage = $"Could not process PDF: {ex.Message}";
+            }
+        });
+    }
+
+    private void FinishDocLoad()
+    {
+        if (_doc is null) return;
+        _sampleData = _doc.Fields.ToDictionary(f => f.Key, f => f.Value.Sample ?? "");
+        _renderPlaceholders = AutoLayoutEngine.EnsureRenderData(_doc, _sampleData);
+        _lastUpdated = DateTime.Now;
+        RenderAllLabels();
+        SelectLabel(PrintableLabels.FirstOrDefault()?.Id);
+    }
+
+    private async Task GenerateFromSpec()
+    {
+        if (_spec is null) return;
+        await RunWithProgress("Generating auto-layout...", async () =>
+        {
+            try
+            {
+                _doc = await Task.Run(() => AutoLayoutEngine.BuildDocument(_spec));
+                _layoutApproved = false;
+                FinishDocLoad();
+            }
+            catch (Exception ex)
+            {
+                _errorMessage = $"Could not generate layout: {ex.Message}";
+            }
+        });
+    }
+
+    private void BackToSpecEdit()
+    {
+        _doc = null;
+        _pdfDataUrl = null;
+        _selectedLabelId = null;
+        _layoutApproved = false;
+        _labelRenderCache.Clear();
+    }
+
+    private async Task DownloadLdm()
+    {
+        if (_doc is null) return;
+        try
+        {
+            var json = JsonSerializer.Serialize(_doc, LdmDocument.WriteOptions);
+            var tempPath = Path.ChangeExtension(Path.GetTempFileName(), ".ldm.json");
+            await File.WriteAllTextAsync(tempPath, json);
+            var token = Guid.NewGuid().ToString("N");
+            FileDownloads.Pending[token] = new FileDownloads.Entry(tempPath, $"{_doc.DocumentId}.ldm.json");
+            Nav.NavigateTo($"{Nav.BaseUri}download-file/{token}", forceLoad: true); // BaseUri gom san path base (IIS sub-app)
+        }
+        catch (Exception ex) { _errorMessage = $"Could not export LDM: {ex.Message}"; }
+    }
+
+    private async Task DownloadTraceLog()
+    {
+        if (_doc is null) return;
+        try
+        {
+            var html = TraceReport.ToHtml(_doc);
+            var tempPath = Path.ChangeExtension(Path.GetTempFileName(), ".trace.html");
+            await File.WriteAllTextAsync(tempPath, html);
+            var token = Guid.NewGuid().ToString("N");
+            FileDownloads.Pending[token] = new FileDownloads.Entry(tempPath, $"{_doc.DocumentId}.trace.html");
+            Nav.NavigateTo($"{Nav.BaseUri}download-file/{token}", forceLoad: true); // BaseUri gom san path base (IIS sub-app)
+        }
+        catch (Exception ex) { _errorMessage = $"Could not export Trace Log: {ex.Message}"; }
+    }
+
+    private static string ConfClass(ContentField f) =>
+        string.IsNullOrWhiteSpace(f.SampleValue) ? "empty"
+        : f.Confidence >= 0.9f ? "high"
+        : f.Confidence >= 0.5f ? "mid" : "low";
+
+    private static string ConfTitle(ContentField f) => ConfClass(f) switch
+    {
+        "high" => $"Chắc chắn ({f.Source}) — kiểm tra nhanh",
+        "mid"  => $"Khá chắc ({f.Source}) — nên xác nhận",
+        "low"  => $"Độ tin cậy thấp ({f.Source}) — PHẢI xác nhận",
+        _      => "Chưa có giá trị — điền vào hoặc để trống nếu lấy từ data feed",
+    };
+
+    private void UpdateSample(string token, string? value)
+    {
+        _sampleData[token] = value ?? "";
+        if (_doc is not null && _doc.Fields.TryGetValue(token, out var fd)) fd.Sample = value ?? "";
+        RenderAllLabels();
+        _pdfDataUrl = _selectedLabelId is not null
+            ? _labelRenderCache.GetValueOrDefault(_selectedLabelId)?.PdfDataUrl : null;
+    }
+
+    // Render truoc PDF + lint cho TOAN BO nhan co the in (khong chi nhan dang chon) ngay sau khi
+    // trich xuat xong - de tab "Kiem tra in an" va cac pill canh bao tren the nhan hien dung tong
+    // quan toan tai lieu (giong buoc "2. Tu dong thiet ke" da hoan tat), thay vi phai bam qua tung
+    // nhan moi biet co canh bao hay khong.
+    private void RenderAllLabels()
+    {
+        _labelRenderCache.Clear();
+        foreach (var label in PrintableLabels)
+        {
+            if (label.Elements.Count == 0)
+            {
+                _labelRenderCache[label.Id] = new LabelRender(null, new(), "manual layout needed.");
+                continue;
+            }
+            try
+            {
+                var lint = new Linter();
+                using var pdfStream = new MemoryStream();
+                new PdfLabelRenderer(lint).RenderLabel(label, _sampleData, pdfStream);
+                var url = "data:application/pdf;base64," + Convert.ToBase64String(pdfStream.ToArray());
+                _labelRenderCache[label.Id] = new LabelRender(url, lint.Rows.ToList(), null);
+            }
+            catch (Exception ex)
+            {
+                _labelRenderCache[label.Id] = new LabelRender(null, new(), ex.Message);
+            }
+        }
+    }
+
+    // Chay 1 tac vu bat dong bo trong khi hien popup loading giua man hinh voi % tang dan muot.
+    // Dung chung cho moi tien trinh: cac tien trinh backend hien khong co moc tien do con de bao %
+    // that (PmdExtractor.Extract / LabFileGenerator.Generate deu la 1 loi goi kho chia nho), nen %
+    // hien thi la uoc luong easing toi da 89% trong luc cho, roi chot 100% ngay khi work() xong -
+    // dung UX pattern chuan cho tac vu khong do duoc tien do chi tiet (giong thanh loading cua
+    // nhieu trinh duyet/ung dung).
+    private async Task RunWithProgress(string label, Func<Task> work)
+    {
+        _loadingLabel = label;
+        _loadingPercent = 0;
+        _loadingVisible = true;
+        StateHasChanged();
+
+        using var cts = new CancellationTokenSource();
+        var progressLoop = SimulateProgressAsync(cts.Token);
+
+        try
+        {
+            await work();
+        }
+        finally
+        {
+            cts.Cancel();
+            try { await progressLoop; } catch (OperationCanceledException) { }
+
+            _loadingPercent = 100;
+            StateHasChanged();
+            await Task.Delay(350);
+            _loadingVisible = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SimulateProgressAsync(CancellationToken token)
+    {
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                await Task.Delay(120, token);
+                _loadingPercent += Math.Max(1, (89 - _loadingPercent) / 8);
+                if (_loadingPercent > 89) _loadingPercent = 89;
+                StateHasChanged();
+            }
+        }
+        catch (OperationCanceledException) { /* huy binh thuong khi work() da xong */ }
+    }
+
+    private void SelectLabel(string? labelId)
+    {
+        _selectedLabelId = labelId;
+        _errorMessage = null;
+        _labExportError = null;
+        _zplExportError = null;
+        _zoomPercent = 100;
+
+        var render = labelId is not null ? _labelRenderCache.GetValueOrDefault(labelId) : null;
+        _pdfDataUrl = render?.PdfDataUrl;
+    }
+
+    private async Task ExportLab()
+    {
+        if (_doc is null || _selectedLabel is null) return;
+
+        _labExportError = null;
+        var label = _selectedLabel;
+        var doc = _doc;
+        var sampleData = _sampleData;
+
+        await RunWithProgress("Exporting .lab file (CodeSoft 6)...", async () =>
+        {
+            try
+            {
+                var tempPath = Path.ChangeExtension(Path.GetTempFileName(), ".lab");
+
+                var result = await Task.Run(() =>
+                    new LabFileGenerator().Generate(label, doc, sampleData, tempPath));
+
+                if (!result.Success)
+                {
+                    _labExportError = $"Could not export .lab: {result.ErrorMessage}";
+                    return;
+                }
+
+                var token = Guid.NewGuid().ToString("N");
+                FileDownloads.Pending[token] = new FileDownloads.Entry(tempPath, $"{label.Id}.lab");
+                Nav.NavigateTo($"{Nav.BaseUri}download-file/{token}", forceLoad: true); // BaseUri gom san path base (IIS sub-app)
+            }
+            catch (Exception ex)
+            {
+                _labExportError = $"Could not export .lab: {ex.Message}";
+            }
+        });
+    }
+
+    private async Task ExportZpl()
+    {
+        if (_doc is null || _selectedLabel is null) return;
+
+        _zplExportError = null;
+        var label = _selectedLabel;
+        var sampleData = _sampleData;
+
+        await RunWithProgress("Exporting ZPL file...", async () =>
+        {
+            try
+            {
+                var zpl = await Task.Run(() => new ZplEmitter(203).EmitStoredFormat(label, sampleData));
+                var tempPath = Path.ChangeExtension(Path.GetTempFileName(), ".zpl");
+                await File.WriteAllTextAsync(tempPath, zpl);
+
+                var token = Guid.NewGuid().ToString("N");
+                FileDownloads.Pending[token] = new FileDownloads.Entry(tempPath, $"{label.Id}.zpl");
+                Nav.NavigateTo($"{Nav.BaseUri}download-file/{token}", forceLoad: true); // BaseUri gom san path base (IIS sub-app)
+            }
+            catch (Exception ex)
+            {
+                _zplExportError = $"Could not export ZPL: {ex.Message}";
+            }
+        });
+    }
+}

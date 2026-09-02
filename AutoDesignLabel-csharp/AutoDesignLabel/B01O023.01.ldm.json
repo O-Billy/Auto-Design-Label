@@ -1,0 +1,1229 @@
+{
+  "schemaVersion": "1.0",
+  "documentId": "B01O023.01",
+  "revision": "00",
+  "sourcePmd": "B01O023_01-LBL-00.pdf",
+  "product": "JRDU4821 Reverse Multi-Dwelling Unit",
+  "units": "mm",
+  "origin": "top-left",
+  "fonts": {
+    "medium": {
+      "family": "JioType Medium",
+      "fallback": "Helvetica-Bold"
+    },
+    "light": {
+      "family": "JioType Light",
+      "fallback": "Helvetica"
+    }
+  },
+  "fields": {
+    "MAC": {
+      "source": "MES",
+      "sample": "012345678901",
+      "pattern": "^[0-9A-Fa-f]{12}$",
+      "note": "Ethernet MAC, so chan. Bluetooth MAC = MAC + 1"
+    },
+    "RSN": {
+      "source": "MES",
+      "sample": "RTHMDMY00000001",
+      "pattern": "^R[A-Z]{2}[A-Z]{2}[A-L][A-N][0-9]{8}$",
+      "note": "R + TH + MD + Month + Year + 8 digit, reset hang thang"
+    },
+    "EAN": {
+      "source": "const",
+      "sample": "8699037702050"
+    },
+    "MM_YYYY": {
+      "source": "system",
+      "sample": "07/2026"
+    },
+    "GROSS_G": {
+      "source": "MES",
+      "sample": "1240"
+    },
+    "PO_NO": {
+      "source": "ERP",
+      "sample": "1234567890"
+    },
+    "PO_DATE": {
+      "source": "ERP",
+      "sample": "15.07.26"
+    },
+    "MSN": {
+      "source": "SerialService",
+      "sample": "MB1234567815KA0001",
+      "pattern": "^M.{8}[0-9]{2}[A-L][A-N][AC][0-9]{4}$"
+    },
+    "CARTON_NO": {
+      "source": "SerialService",
+      "sample": "0001/9999"
+    },
+    "QNTY_CARTON": {
+      "source": "MES",
+      "sample": "6"
+    },
+    "PALLET_NO": {
+      "source": "SerialService",
+      "sample": "RP123456780001"
+    },
+    "PALLET_SEQ": {
+      "source": "SerialService",
+      "sample": "0001/0012"
+    },
+    "INVOICE_NO": {
+      "source": "ERP",
+      "sample": "INV20260715001"
+    },
+    "QNTY_PALLET": {
+      "source": "MES",
+      "sample": "288"
+    },
+    "TOTAL_CARTONS": {
+      "source": "MES",
+      "sample": "48"
+    },
+    "CARTON_GROSS_G": {
+      "source": "MES",
+      "sample": "8420.50"
+    },
+    "CARTON_NET_G": {
+      "source": "MES",
+      "sample": "7440.00"
+    },
+    "PALLET_GROSS_G": {
+      "source": "MES",
+      "sample": "412600.0"
+    },
+    "PALLET_NET_G": {
+      "source": "MES",
+      "sample": "357120.0"
+    }
+  },
+  "openIssues": [
+    {
+      "ref": "1.4.1",
+      "severity": "blocker",
+      "text": "PoE Input '4#-5# Vdc' va '2#W' bi che so. Can PM xac nhan gia tri thuc."
+    },
+    {
+      "ref": "3.2",
+      "severity": "major",
+      "text": "Safety seal: text ghi 64*30mm nhung ban ve ghi 40mm."
+    },
+    {
+      "ref": "5.4g",
+      "severity": "major",
+      "text": "Carton QNTY mau la 6 nhung luat ghi '4 at most'."
+    },
+    {
+      "ref": "1.4.2a",
+      "severity": "major",
+      "text": "Luat MAC Ethernet la so chan, nhung carton mau liet ke 901/903/905 (le)."
+    },
+    {
+      "ref": "1.4.3",
+      "severity": "minor",
+      "text": "Device QR co IMEI/IMEI2 nhung thiet bi PoE MDU khong co cellular."
+    },
+    {
+      "ref": "5.8b",
+      "severity": "minor",
+      "text": "Carton QR lap tag <MAC> 6 lan thay vi MAC1..MAC6. Giu nguyen, khong tu sua."
+    },
+    {
+      "ref": "6.8b",
+      "severity": "minor",
+      "text": "Pallet QR ghi '<?xmlversion=' thieu dau cach."
+    }
+  ],
+  "labels": [
+    {
+      "id": "device",
+      "partNumber": "504.02108.005",
+      "name": "Device label",
+      "widthMm": 53,
+      "heightMm": 39,
+      "material": "Synthetic 60-70 GSM",
+      "quantity": 1,
+      "layoutConfidence": "suy dien tu PMD, can doi chieu artwork goc",
+      "elements": [
+        {
+          "type": "text",
+          "x": 2.5,
+          "y": 2.2,
+          "size": 5.4,
+          "font": "medium",
+          "text": "Commodity: JRDU4821 Reverse Multi-Dwelling Unit"
+        },
+        {
+          "type": "text",
+          "x": 2.5,
+          "y": 4.4,
+          "size": 6,
+          "font": "medium",
+          "text": "PoE Input: 4#-5# Vdc @Port 1-7 (45W each)"
+        },
+        {
+          "type": "text",
+          "x": 2.5,
+          "y": 6.6,
+          "size": 6,
+          "font": "light",
+          "text": "PoE Output: Pin 1/2/4/5:D+, Pin 3/6/7/8:D-,"
+        },
+        {
+          "type": "text",
+          "x": 2.5,
+          "y": 8.8,
+          "size": 6,
+          "font": "light",
+          "text": "4#-5#Vdc @port 8 (2#W)"
+        },
+        {
+          "type": "text",
+          "x": 2.5,
+          "y": 11.0,
+          "size": 6,
+          "font": "medium",
+          "text": "EAN: {{EAN}}"
+        },
+        {
+          "type": "text",
+          "x": 2.5,
+          "y": 13.2,
+          "size": 6,
+          "font": "medium",
+          "text": "MAC ID: {{MAC}}"
+        },
+        {
+          "type": "text",
+          "x": 2.5,
+          "y": 15.4,
+          "size": 6,
+          "font": "medium",
+          "text": "RSN: {{RSN}}"
+        },
+        {
+          "type": "text",
+          "x": 50.5,
+          "y": 15.4,
+          "size": 6,
+          "font": "light",
+          "align": "right",
+          "text": "Made in India"
+        },
+        {
+          "type": "barcode128",
+          "x": 2.5,
+          "y": 18.5,
+          "width": 27,
+          "height": 3,
+          "data": "{{MAC}}",
+          "spec": "27x3mm"
+        },
+        {
+          "type": "barcode128",
+          "x": 2.5,
+          "y": 23.5,
+          "width": 27,
+          "height": 3,
+          "data": "{{EAN}}",
+          "spec": "27x3mm"
+        },
+        {
+          "type": "barcode128",
+          "x": 2.5,
+          "y": 28.5,
+          "width": 27,
+          "height": 3,
+          "data": "{{RSN}}",
+          "spec": "27x3mm"
+        },
+        {
+          "type": "qr",
+          "x": 32.5,
+          "y": 18.5,
+          "size": 18,
+          "ecc": "M",
+          "data": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!--Document created by: RJIL http://jio.com -->\n<MFRNAME>GM TELECOMMUNICATION</MFRNAME>\n<MODELNO>JRDU4821</MODELNO>\n<SRNO>{{RSN}}</SRNO>\n<IMEI>123456789012345</IMEI>\n<IMEI2>123456789012345</IMEI2>\n<EAN>{{EAN}}</EAN>"
+        }
+      ]
+    },
+    {
+      "id": "mrp",
+      "partNumber": "504.02109.005",
+      "name": "MRP and RSN label",
+      "widthMm": 135,
+      "heightMm": 60,
+      "material": "80g Artpaper",
+      "quantity": 1,
+      "panels": [
+        {
+          "x": 0,
+          "width": 99
+        },
+        {
+          "x": 100,
+          "width": 35
+        }
+      ],
+      "layoutConfidence": "suy dien tu PMD",
+      "elements": [
+        {
+          "type": "line",
+          "x1": 99.5,
+          "y1": 1,
+          "x2": 99.5,
+          "y2": 59,
+          "dash": [
+            1,
+            1
+          ]
+        },
+        {
+          "type": "text",
+          "x": 3,
+          "y": 4,
+          "size": 6,
+          "font": "medium",
+          "text": "Commodity : JRDU4821 Reverse Multi-Dwelling Unit_IN"
+        },
+        {
+          "type": "text",
+          "x": 3,
+          "y": 10,
+          "size": 6,
+          "font": "medium",
+          "text": "MRP (inclusive of all taxes) :"
+        },
+        {
+          "type": "text",
+          "x": 35,
+          "y": 11,
+          "size": 12,
+          "font": "light",
+          "text": "NOT FOR RETAIL SALE"
+        },
+        {
+          "type": "text",
+          "x": 3,
+          "y": 16,
+          "size": 6,
+          "font": "medium",
+          "text": "Manufactured by :"
+        },
+        {
+          "type": "text",
+          "x": 24,
+          "y": 16,
+          "size": 6,
+          "font": "light",
+          "text": "GM Telecommunication Private Limited"
+        },
+        {
+          "type": "text",
+          "x": 20,
+          "y": 18.5,
+          "size": 6,
+          "font": "medium",
+          "align": "right",
+          "text": "For :"
+        },
+        {
+          "type": "text",
+          "x": 24,
+          "y": 18.5,
+          "size": 6,
+          "font": "light",
+          "text": "Reliance Retail Limited"
+        },
+        {
+          "type": "qr",
+          "x": 105,
+          "y": 3,
+          "size": 25,
+          "ecc": "M",
+          "data": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!--Document created by: RJIL http://jio.com -->\n<MFRNAME>GM TELECOMMUNICATION</MFRNAME>\n<MODELNO>JRDU4821</MODELNO>\n<SRNO>{{RSN}}</SRNO>\n<MAC>{{MAC}}</MAC>\n<EAN>{{EAN}}</EAN>\n<MRP>NOT FOR RETAIL SALE</MRP>"
+        },
+        {
+          "type": "barcode128",
+          "x": 105,
+          "y": 33,
+          "width": 25,
+          "height": 3,
+          "data": "{{MAC}}",
+          "spec": "25x3mm"
+        },
+        {
+          "type": "text",
+          "x": 105,
+          "y": 38.5,
+          "size": 6,
+          "font": "medium",
+          "text": "MAC ID :"
+        },
+        {
+          "type": "text",
+          "x": 116,
+          "y": 38.5,
+          "size": 6,
+          "font": "light",
+          "text": "{{MAC}}"
+        },
+        {
+          "type": "barcode128",
+          "x": 105,
+          "y": 41,
+          "width": 25,
+          "height": 3,
+          "data": "{{RSN}}",
+          "spec": "25x3mm"
+        },
+        {
+          "type": "text",
+          "x": 105,
+          "y": 46.5,
+          "size": 6,
+          "font": "medium",
+          "text": "RSN :"
+        },
+        {
+          "type": "text",
+          "x": 113,
+          "y": 46.5,
+          "size": 6,
+          "font": "light",
+          "text": "{{RSN}}"
+        },
+        {
+          "type": "barcode128",
+          "x": 105,
+          "y": 49,
+          "width": 25,
+          "height": 3,
+          "data": "{{EAN}}",
+          "spec": "25x3mm"
+        },
+        {
+          "type": "text",
+          "x": 105,
+          "y": 54.5,
+          "size": 6,
+          "font": "medium",
+          "text": "EAN :"
+        },
+        {
+          "type": "text",
+          "x": 113,
+          "y": 54.5,
+          "size": 6,
+          "font": "light",
+          "text": "{{EAN}}"
+        },
+        {
+          "type": "text",
+          "x": 24,
+          "y": 21,
+          "size": 6,
+          "font": "light",
+          "text": "BBMP Municipal New No. 643, (PID No.68-6-643),"
+        },
+        {
+          "type": "text",
+          "x": 24,
+          "y": 23.5,
+          "size": 6,
+          "font": "light",
+          "text": "situated at Site No.643, 80 Feet Road,"
+        },
+        {
+          "type": "text",
+          "x": 24,
+          "y": 26,
+          "size": 6,
+          "font": "light",
+          "text": "4th Block, Koramangala, Bengaluru 560034"
+        },
+        {
+          "type": "text",
+          "x": 3,
+          "y": 31,
+          "size": 6,
+          "font": "medium",
+          "text": "Net Quantity :"
+        },
+        {
+          "type": "text",
+          "x": 22,
+          "y": 32,
+          "size": 12,
+          "font": "light",
+          "text": "1"
+        },
+        {
+          "type": "text",
+          "x": 25,
+          "y": 32,
+          "size": 6,
+          "font": "light",
+          "text": "N Device +"
+        },
+        {
+          "type": "text",
+          "x": 40,
+          "y": 32,
+          "size": 12,
+          "font": "light",
+          "text": "1"
+        },
+        {
+          "type": "text",
+          "x": 43,
+          "y": 32,
+          "size": 6,
+          "font": "light",
+          "text": "N Mounting Screws +"
+        },
+        {
+          "type": "text",
+          "x": 70,
+          "y": 32,
+          "size": 12,
+          "font": "light",
+          "text": "1"
+        },
+        {
+          "type": "text",
+          "x": 73,
+          "y": 32,
+          "size": 6,
+          "font": "light",
+          "text": "N QSG"
+        },
+        {
+          "type": "text",
+          "x": 3,
+          "y": 38,
+          "size": 6,
+          "font": "medium",
+          "text": "Month & Year of Manufacture :"
+        },
+        {
+          "type": "text",
+          "x": 40,
+          "y": 39,
+          "size": 12,
+          "font": "light",
+          "text": "{{MM_YYYY}}"
+        },
+        {
+          "type": "text",
+          "x": 3,
+          "y": 42.5,
+          "size": 6,
+          "font": "medium",
+          "text": "Gross Weight :"
+        },
+        {
+          "type": "text",
+          "x": 21,
+          "y": 42.5,
+          "size": 6,
+          "font": "light",
+          "text": "{{GROSS_G}} g"
+        },
+        {
+          "type": "text",
+          "x": 3,
+          "y": 45.5,
+          "size": 6,
+          "font": "medium",
+          "text": "Marketed by :"
+        },
+        {
+          "type": "text",
+          "x": 21,
+          "y": 45.5,
+          "size": 6,
+          "font": "light",
+          "text": "Reliance Retail Limited, Shed No. 77/80, Indian Oil Corporation Godown,"
+        },
+        {
+          "type": "text",
+          "x": 21,
+          "y": 48,
+          "size": 6,
+          "font": "light",
+          "text": "Mankoli Naka, Vill: Dapode, Tal: Bhiwandi, Thane, Maharashtra, India. Pin: 421302"
+        },
+        {
+          "type": "text",
+          "x": 3,
+          "y": 50.5,
+          "size": 6,
+          "font": "medium",
+          "text": "Registered Office :"
+        },
+        {
+          "type": "text",
+          "x": 24,
+          "y": 50.5,
+          "size": 6,
+          "font": "light",
+          "text": "3rd Floor, Court House, L.T .Marg. Dhobi Talao Mumbai 400 002."
+        },
+        {
+          "type": "text",
+          "x": 3,
+          "y": 53.5,
+          "size": 6,
+          "font": "light",
+          "text": "For customer complaint/feedback, write to Customer Care Manager of Marketer at"
+        },
+        {
+          "type": "text",
+          "x": 3,
+          "y": 55.5,
+          "size": 6,
+          "font": "light",
+          "text": "above mentioned address."
+        },
+        {
+          "type": "text",
+          "x": 3,
+          "y": 58,
+          "size": 6,
+          "font": "medium",
+          "text": "Customer Care No. :"
+        },
+        {
+          "type": "text",
+          "x": 27,
+          "y": 58,
+          "size": 6,
+          "font": "light",
+          "text": "1800 890 9999 (Toll Free)"
+        },
+        {
+          "type": "text",
+          "x": 58,
+          "y": 58,
+          "size": 6,
+          "font": "medium",
+          "text": "& E-mail ID :"
+        },
+        {
+          "type": "text",
+          "x": 74,
+          "y": 58,
+          "size": 6,
+          "font": "light",
+          "text": "care@jio.com"
+        },
+        {
+          "type": "image",
+          "x": 89,
+          "y": 4,
+          "width": 7,
+          "height": 7,
+          "src": "rohs.svg",
+          "placeholder": "RoHS"
+        },
+        {
+          "type": "image",
+          "x": 89,
+          "y": 13,
+          "width": 7,
+          "height": 7,
+          "src": "weee.svg",
+          "placeholder": "WEEE"
+        },
+        {
+          "type": "image",
+          "x": 87,
+          "y": 23,
+          "width": 10,
+          "height": 3.5,
+          "src": "flag_in.svg",
+          "placeholder": "IN"
+        },
+        {
+          "type": "text",
+          "x": 92,
+          "y": 30,
+          "size": 5,
+          "font": "light",
+          "text": "Made in India",
+          "align": "center"
+        },
+        {
+          "type": "text",
+          "x": 20,
+          "y": 21,
+          "size": 6,
+          "font": "medium",
+          "align": "right",
+          "text": "At :"
+        }
+      ]
+    },
+    {
+      "id": "carton",
+      "partNumber": "504.02027.025",
+      "name": "Carton label",
+      "widthMm": 140,
+      "heightMm": 90,
+      "material": "50# mylar",
+      "quantity": 2,
+      "layoutConfidence": "suy dien tu PMD",
+      "elements": [
+        {
+          "type": "text",
+          "x": 5,
+          "y": 8,
+          "size": 9,
+          "font": "medium",
+          "text": "Commodity:"
+        },
+        {
+          "type": "text",
+          "x": 26,
+          "y": 8,
+          "size": 9,
+          "font": "light",
+          "text": "JRDU4821 Reverse Multi-Dwelling Unit_IN"
+        },
+        {
+          "type": "text",
+          "x": 5,
+          "y": 13,
+          "size": 9,
+          "font": "medium",
+          "text": "Model:"
+        },
+        {
+          "type": "text",
+          "x": 26,
+          "y": 13,
+          "size": 9,
+          "font": "light",
+          "text": "JRDU4821"
+        },
+        {
+          "type": "text",
+          "x": 5,
+          "y": 18,
+          "size": 9,
+          "font": "medium",
+          "text": "Color:"
+        },
+        {
+          "type": "text",
+          "x": 26,
+          "y": 18,
+          "size": 9,
+          "font": "light",
+          "text": "Gray"
+        },
+        {
+          "type": "text",
+          "x": 5,
+          "y": 23,
+          "size": 9,
+          "font": "medium",
+          "text": "Carton No.:"
+        },
+        {
+          "type": "text",
+          "x": 26,
+          "y": 23,
+          "size": 9,
+          "font": "light",
+          "text": "{{CARTON_NO}}"
+        },
+        {
+          "type": "text",
+          "x": 5,
+          "y": 29,
+          "size": 8,
+          "font": "medium",
+          "text": "PO No.& PO Date:"
+        },
+        {
+          "type": "text",
+          "x": 34,
+          "y": 29,
+          "size": 8,
+          "font": "light",
+          "text": "{{PO_NO}} & {{PO_DATE}}"
+        },
+        {
+          "type": "barcode128",
+          "x": 5,
+          "y": 32,
+          "width": 55,
+          "height": 4,
+          "data": "{{MSN}}",
+          "spec": "h=4mm"
+        },
+        {
+          "type": "text",
+          "x": 5,
+          "y": 39.5,
+          "size": 8,
+          "font": "medium",
+          "text": "MSN:"
+        },
+        {
+          "type": "text",
+          "x": 15,
+          "y": 39.5,
+          "size": 8,
+          "font": "light",
+          "text": "{{MSN}}"
+        },
+        {
+          "type": "barcode128",
+          "x": 5,
+          "y": 42.5,
+          "width": 45,
+          "height": 4,
+          "data": "{{EAN}}",
+          "spec": "h=4mm"
+        },
+        {
+          "type": "text",
+          "x": 5,
+          "y": 50,
+          "size": 8,
+          "font": "medium",
+          "text": "EAN:"
+        },
+        {
+          "type": "text",
+          "x": 15,
+          "y": 50,
+          "size": 8,
+          "font": "light",
+          "text": "{{EAN}}"
+        },
+        {
+          "type": "text",
+          "x": 70,
+          "y": 50,
+          "size": 8,
+          "font": "medium",
+          "text": "QNTY:"
+        },
+        {
+          "type": "text",
+          "x": 82,
+          "y": 50,
+          "size": 8,
+          "font": "light",
+          "text": "{{QNTY_CARTON}}"
+        },
+        {
+          "type": "qr",
+          "x": 96,
+          "y": 5,
+          "size": 39,
+          "ecc": "M",
+          "data": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!--Document created by: RJIL http://jio.com -->\n<MFRNAME>GM TELECOMMUNICATION</MFRNAME>\n<MODELNO>JRDU4821</MODELNO>\n<PO>{{PO_NO}}</PO>\n<MSN>{{MSN}}</MSN>\n<EAN>{{EAN}}</EAN>\n<QNTY>{{QNTY_CARTON}}</QNTY>\n<SRNO1>{{RSN1}}</SRNO1>\n<MAC>{{MAC1}}</MAC>\n<SRNO2>{{RSN2}}</SRNO2>\n<MAC>{{MAC2}}</MAC>\n<SRNO3>{{RSN3}}</SRNO3>\n<MAC>{{MAC3}}</MAC>\n<SRNO4>{{RSN4}}</SRNO4>\n<MAC>{{MAC4}}</MAC>\n<SRNO5>{{RSN5}}</SRNO5>\n<MAC>{{MAC5}}</MAC>\n<SRNO6>{{RSN6}}</SRNO6>\n<MAC>{{MAC6}}</MAC>"
+        },
+        {
+          "type": "repeat",
+          "source": "units",
+          "max": 6,
+          "y0": 54.5,
+          "stepY": 5.2,
+          "template": [
+            {
+              "type": "barcode128",
+              "x": 5,
+              "y": 0.4,
+              "width": 33,
+              "height": 4,
+              "data": "{{RSN_i}}"
+            },
+            {
+              "type": "text",
+              "x": 39.5,
+              "y": 3.6,
+              "size": 6.5,
+              "font": "medium",
+              "text": "RSN{{i}}:"
+            },
+            {
+              "type": "text",
+              "x": 49,
+              "y": 3.6,
+              "size": 6.5,
+              "font": "light",
+              "text": "{{RSN_i}}"
+            },
+            {
+              "type": "barcode128",
+              "x": 74,
+              "y": 0.4,
+              "width": 22,
+              "height": 4,
+              "data": "{{MAC_i}}"
+            },
+            {
+              "type": "text",
+              "x": 97.5,
+              "y": 3.6,
+              "size": 6.5,
+              "font": "medium",
+              "text": "MAC:"
+            },
+            {
+              "type": "text",
+              "x": 106,
+              "y": 3.6,
+              "size": 6.5,
+              "font": "light",
+              "text": "{{MAC_i}}"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "x": 5,
+          "y": 88.5,
+          "size": 8,
+          "font": "medium",
+          "text": "Gross Weight:"
+        },
+        {
+          "type": "text",
+          "x": 27,
+          "y": 88.5,
+          "size": 8,
+          "font": "light",
+          "text": "{{CARTON_GROSS_G}} g"
+        },
+        {
+          "type": "text",
+          "x": 55,
+          "y": 88.5,
+          "size": 8,
+          "font": "medium",
+          "text": "Net Weight:"
+        },
+        {
+          "type": "text",
+          "x": 74,
+          "y": 88.5,
+          "size": 8,
+          "font": "light",
+          "text": "{{CARTON_NET_G}} g"
+        },
+        {
+          "type": "text",
+          "x": 135,
+          "y": 88.5,
+          "size": 7,
+          "font": "light",
+          "align": "right",
+          "text": "Made in India"
+        }
+      ]
+    },
+    {
+      "id": "pallet",
+      "partNumber": "503.01171.045",
+      "name": "Pallet label",
+      "widthMm": 100,
+      "heightMm": 80,
+      "material": "50# mylar",
+      "quantity": 2,
+      "layoutConfidence": "suy dien tu PMD",
+      "elements": [
+        {
+          "type": "text",
+          "x": 4,
+          "y": 6,
+          "size": 8,
+          "font": "medium",
+          "text": "Commodity:"
+        },
+        {
+          "type": "text",
+          "x": 22,
+          "y": 6,
+          "size": 8,
+          "font": "light",
+          "text": "Reverse Multi-Dwelling Unit_IN"
+        },
+        {
+          "type": "text",
+          "x": 22,
+          "y": 9.5,
+          "size": 8,
+          "font": "light",
+          "text": "JRDU4821"
+        },
+        {
+          "type": "text",
+          "x": 4,
+          "y": 14.5,
+          "size": 7,
+          "font": "medium",
+          "text": "Consignor :"
+        },
+        {
+          "type": "text",
+          "x": 21,
+          "y": 14.5,
+          "size": 6.5,
+          "font": "light",
+          "text": "GM Telecommunication Private Limited"
+        },
+        {
+          "type": "text",
+          "x": 21,
+          "y": 17.5,
+          "size": 6.5,
+          "font": "light",
+          "text": "BBMP Municipal New No. 643,"
+        },
+        {
+          "type": "text",
+          "x": 21,
+          "y": 20.5,
+          "size": 6.5,
+          "font": "light",
+          "text": "(PID No.68-6-643), situated at Site"
+        },
+        {
+          "type": "text",
+          "x": 21,
+          "y": 23.5,
+          "size": 6.5,
+          "font": "light",
+          "text": "No.643, 80 Feet Road, 4th Block,"
+        },
+        {
+          "type": "text",
+          "x": 21,
+          "y": 26.5,
+          "size": 6.5,
+          "font": "light",
+          "text": "Koramangala, Bengaluru 560034"
+        },
+        {
+          "type": "text",
+          "x": 4,
+          "y": 31.5,
+          "size": 7,
+          "font": "medium",
+          "text": "Ship to Address:"
+        },
+        {
+          "type": "text",
+          "x": 27,
+          "y": 31.5,
+          "size": 6.5,
+          "font": "light",
+          "text": "Reliance Retail Limited"
+        },
+        {
+          "type": "text",
+          "x": 27,
+          "y": 34.5,
+          "size": 6.5,
+          "font": "light",
+          "text": "Survey No : 36/1, 37/1A, 38/1"
+        },
+        {
+          "type": "text",
+          "x": 27,
+          "y": 37.5,
+          "size": 6.5,
+          "font": "light",
+          "text": "and 38/2, Vepambedu Road,"
+        },
+        {
+          "type": "text",
+          "x": 27,
+          "y": 40.5,
+          "size": 6.5,
+          "font": "light",
+          "text": "Koduvalli Village,"
+        },
+        {
+          "type": "text",
+          "x": 27,
+          "y": 43.5,
+          "size": 6.5,
+          "font": "light",
+          "text": "Thiruvallur District - 600 055"
+        },
+        {
+          "type": "text",
+          "x": 4,
+          "y": 49,
+          "size": 8,
+          "font": "medium",
+          "text": "PO No.:"
+        },
+        {
+          "type": "text",
+          "x": 18,
+          "y": 49,
+          "size": 8,
+          "font": "light",
+          "text": "{{PO_NO}}"
+        },
+        {
+          "type": "text",
+          "x": 4,
+          "y": 53,
+          "size": 8,
+          "font": "medium",
+          "text": "Invoice No.:"
+        },
+        {
+          "type": "text",
+          "x": 22,
+          "y": 53,
+          "size": 8,
+          "font": "light",
+          "text": "{{INVOICE_NO}}"
+        },
+        {
+          "type": "text",
+          "x": 4,
+          "y": 57,
+          "size": 8,
+          "font": "medium",
+          "text": "Pallet No.:"
+        },
+        {
+          "type": "text",
+          "x": 20,
+          "y": 57,
+          "size": 8,
+          "font": "light",
+          "text": "{{PALLET_SEQ}}"
+        },
+        {
+          "type": "barcode128",
+          "x": 4,
+          "y": 59.5,
+          "width": 40,
+          "height": 3,
+          "data": "{{PALLET_NO}}",
+          "spec": "h=3mm"
+        },
+        {
+          "type": "text",
+          "x": 4,
+          "y": 65.5,
+          "size": 8,
+          "font": "light",
+          "text": "{{PALLET_NO}}"
+        },
+        {
+          "type": "barcode128",
+          "x": 48,
+          "y": 59.5,
+          "width": 34,
+          "height": 3,
+          "data": "{{EAN}}",
+          "spec": "h=3mm"
+        },
+        {
+          "type": "text",
+          "x": 48,
+          "y": 65.5,
+          "size": 8,
+          "font": "medium",
+          "text": "EAN:"
+        },
+        {
+          "type": "text",
+          "x": 57,
+          "y": 65.5,
+          "size": 8,
+          "font": "light",
+          "text": "{{EAN}}"
+        },
+        {
+          "type": "text",
+          "x": 4,
+          "y": 70,
+          "size": 8,
+          "font": "medium",
+          "text": "QNTY:"
+        },
+        {
+          "type": "text",
+          "x": 16,
+          "y": 70,
+          "size": 8,
+          "font": "light",
+          "text": "{{QNTY_PALLET}}"
+        },
+        {
+          "type": "text",
+          "x": 32,
+          "y": 70,
+          "size": 8,
+          "font": "medium",
+          "text": "Total No. of Cartons:"
+        },
+        {
+          "type": "text",
+          "x": 64,
+          "y": 70,
+          "size": 8,
+          "font": "light",
+          "text": "{{TOTAL_CARTONS}}"
+        },
+        {
+          "type": "text",
+          "x": 4,
+          "y": 75,
+          "size": 8,
+          "font": "medium",
+          "text": "Gross Wt.:"
+        },
+        {
+          "type": "text",
+          "x": 21,
+          "y": 75,
+          "size": 8,
+          "font": "light",
+          "text": "{{PALLET_GROSS_G}} g"
+        },
+        {
+          "type": "text",
+          "x": 50,
+          "y": 75,
+          "size": 8,
+          "font": "medium",
+          "text": "Net Wt.:"
+        },
+        {
+          "type": "text",
+          "x": 63,
+          "y": 75,
+          "size": 8,
+          "font": "light",
+          "text": "{{PALLET_NET_G}} g"
+        },
+        {
+          "type": "qr",
+          "x": 67,
+          "y": 4,
+          "size": 29,
+          "ecc": "M",
+          "data": "<?xmlversion=\"1.0\" encoding=\"UTF-8\"?>\n<!--Document created by: RJIL http://jio.com -->\n<MFRNAME>GM TELECOMMUNICATION PRIVATE LIMITED</MFRNAME>\n<MODELNO>JRDU4821</MODELNO>\n<PO>{{PO_NO}}</PO>\n<PALLET>{{PALLET_NO}}</PALLET>\n<EAN>{{EAN}}</EAN>\n<QNTY>{{QNTY_PALLET}}</QNTY>"
+        }
+      ]
+    }
+  ]
+}

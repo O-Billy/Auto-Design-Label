@@ -1,0 +1,188 @@
+@* Popup "Nhat ky Auto-Design" - giai thich tung buoc PmdExtractor da dung ra nhan de nguoi dung
+   (khong phai dev) tin va soat lai logic. Mo tu nut "Auto-Design LOG" o footer trang review.
+   Nguon: LabelDef.Trace (KHONG serialize vao .ldm.json - xem Ldm.cs - chi co ngay sau khi trich
+   xuat tu PMD; Web UI giu doi tuong trong bo nho nen popup van chay). *@
+@using AutoDesignLabel
+
+@if (Visible && Doc is not null)
+{
+    <div class="adl-scrim" @onclick="OnClose">
+        <div class="adl-card" @onclick:stopPropagation="true" role="dialog" aria-modal="true"
+             aria-label="Auto-Design Trace Log">
+
+            <header class="adl-head">
+                <div>
+                    <span class="adl-kicker">AUTO-DESIGN · EXTRACTION EXPLAINED</span>
+                    <h2>How the tool built this label</h2>
+                </div>
+                <button class="adl-x" @onclick="OnClose" aria-label="Close">&times;</button>
+            </header>
+
+            <p class="adl-intro">
+                Every auto-designed label comes with the step-by-step log below. It shows you what the tool
+                <b>read from the PMD file</b>, <b>how it decided</b>, and <b>what you should
+                double-check</b> before publishing. No step uses AI or guesswork —
+                every coordinate comes straight from the vector strokes in the PDF.
+            </p>
+
+            @if (Selected is null || Selected.Trace.Count == 0)
+            {
+                <div class="adl-body">
+                    <p class="adl-empty">
+                        @(Selected is null
+                            ? "Select a label on the left to see its trace log."
+                            : $"The “{Selected.Name.TrimEnd(':', ' ')}” label has no extraction trace (built by auto-layout from an image-based PMD, or a hand-authored LDM).")
+                    </p>
+                </div>
+            }
+            else
+            {
+                var t = Selected.Trace;
+                var confLabel = t.Any(s => s.Status == "warn") ? "Low"
+                              : t.Any(s => s.Status == "check") ? "Medium" : "High";
+                var confClass = t.Any(s => s.Status == "warn") ? "low"
+                              : t.Any(s => s.Status == "check") ? "mid" : "high";
+                var toCheck = t.Count(s => s.Status != "auto");
+
+                <div class="adl-summary">
+                    <div class="adl-preview">
+                        <div class="adl-preview-frame">@RenderLabelSvg(Selected)</div>
+                        <div class="adl-preview-cap">
+                            @Selected.Name.TrimEnd(':', ' ') ·
+                            @Selected.WidthMm.ToString("0.#") × @Selected.HeightMm.ToString("0.#") mm ·
+                            P/N @Selected.PartNumber@(Selected.CornerRadiusMm > 0 ? $" · rounded corners ~{Selected.CornerRadiusMm:0.#} mm" : "")
+                        </div>
+                    </div>
+                    <div class="adl-sum-stats">
+                        <div class="adl-stat conf-@confClass">
+                            <span class="adl-stat-n">@confLabel</span><span class="adl-stat-k">Confidence</span>
+                        </div>
+                        <div class="adl-stat">
+                            <span class="adl-stat-n">@Selected.Elements.Count</span><span class="adl-stat-k">elements</span>
+                        </div>
+                        <div class="adl-stat">
+                            <span class="adl-stat-n">@toCheck</span><span class="adl-stat-k">steps to review</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="adl-body">
+                    <ol class="adl-log">
+                        @{ var n = 0; }
+                        @foreach (var s in t)
+                        {
+                            n++;
+                            <li class="adl-step s-@s.Status">
+                                <span class="adl-marker">@n</span>
+                                <div class="adl-step-card">
+                                    <div class="adl-step-head">
+                                        <span class="adl-eyebrow">@Eyebrow(s.Key)</span>
+                                        <span class="adl-pill @s.Status">@StatusText(s.Status)</span>
+                                    </div>
+                                    <h3>@s.Title</h3>
+                                    @if (!string.IsNullOrWhiteSpace(s.Did))
+                                    {
+                                        <p class="adl-did">@s.Did</p>
+                                    }
+                                    @if (s.Evidence.Count > 0)
+                                    {
+                                        <div class="adl-evidence">
+                                            @if (s.EvidenceSource is not null)
+                                            {
+                                                <span class="adl-src">@s.EvidenceSource</span>
+                                            }
+                                            @foreach (var ev in s.Evidence)
+                                            {
+                                                <div>@ev</div>
+                                            }
+                                        </div>
+                                    }
+                                    @if (s.TableColumns.Count > 0 && s.TableRows.Count > 0)
+                                    {
+                                        <div class="adl-tablewrap">
+                                            <table class="adl-table">
+                                                <thead>
+                                                    <tr>
+                                                        @foreach (var c in s.TableColumns)
+                                                        {
+                                                            <th>@c</th>
+                                                        }
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var row in s.TableRows)
+                                                    {
+                                                        <tr>
+                                                            @foreach (var cell in row)
+                                                            {
+                                                                <td>@cell</td>
+                                                            }
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(s.Explain))
+                                    {
+                                        <p class="adl-explain">@s.Explain</p>
+                                    }
+                                    @if (s.Verify is not null)
+                                    {
+                                        <div class="adl-verify s-@s.Status"><span>@s.Verify</span></div>
+                                    }
+                                </div>
+                            </li>
+                        }
+                    </ol>
+                </div>
+            }
+
+            <footer class="adl-foot">
+                <div class="adl-foot-dl">
+                    <button class="btn btn-outline" @onclick="DownloadTrace">
+                        <span class="btn-ic">&#11015;</span> Download Trace Log (.html)
+                    </button>
+                    <button class="btn btn-outline" @onclick="DownloadLdm">
+                        <span class="btn-ic">&#11015;</span> Download .ldm.json
+                    </button>
+                </div>
+                <button class="btn btn-primary" @onclick="OnClose">Close</button>
+            </footer>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public LdmDocument? Doc { get; set; }
+    [Parameter] public LabelDef? Selected { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback DownloadLdm { get; set; }
+    [Parameter] public EventCallback DownloadTrace { get; set; }
+
+    private static string Eyebrow(string key) => key switch
+    {
+        "input" => "INPUT",
+        "classify" => "PMD CLASSIFICATION",
+        "frame" => "SIZE & FRAME",
+        "scope" => "AUTO-DESIGN SCOPE",
+        "font" => "FONT RULES",
+        "text" => "TEXT ELEMENTS",
+        "tokens" => "DATA VARIABLES",
+        "barcode" => "BARCODE",
+        "qr" => "QR CODE",
+        "result" => "RESULT & CHECKS",
+        _ => key.ToUpperInvariant()
+    };
+
+    private static string StatusText(string s) => s switch
+    {
+        "warn" => "Warning",
+        "check" => "Needs confirmation",
+        _ => "Automatic"
+    };
+
+    // So do nhan 1:1 - dung chung voi bao cao HTML (xem TraceReport.LabelSvg).
+    private static MarkupString RenderLabelSvg(LabelDef l) => new(TraceReport.LabelSvg(l));
+}

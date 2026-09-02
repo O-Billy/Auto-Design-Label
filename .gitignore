@@ -1,0 +1,34 @@
+# ---- .NET build output ----
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+publish/
+*.user
+*.suo
+
+# ---- Visual Studio ----
+.vs/
+*.userprefs
+
+# ---- Archives / large third-party redistributables (KHONG commit) ----
+# CodeSoft 6 installer + ASP.NET Core Hosting Bundle - tai rieng khi deploy, xem Deploy/CMD.md
+Deploy/*.zip
+Deploy/*.exe
+*.7z
+AutoDesignLabel-csharp.zip
+
+# ---- Local tooling ----
+.claude/settings.local.json
+
+# ---- OS ----
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# ---- Runtime output (proof/lint an ra khi chay thu) ----
+*-1to1.pdf
+*-proof.pdf
+*-lint.json
+*.trace.html
+lint-report.json

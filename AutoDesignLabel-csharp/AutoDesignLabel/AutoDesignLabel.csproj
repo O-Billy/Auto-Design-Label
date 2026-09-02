@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- net8.0-windows10.0.19041 de dung Windows.Media.Ocr (OCR offline cho PMD content-only).
+         SDK ref pack co san trong cache offline (microsoft.windows.sdk.net.ref). Cong cu von da
+         Windows-only tren thuc te (CS6 COM, FontInstaller, may in nhiet) - render_pdf.py la ban
+         tham chieu da nen tang. -->
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>AutoDesignLabel</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Doc text + vector (toa do that) tu PMD.pdf de trich xuat LDM tu dong -->
+    <PackageReference Include="PdfPig" Version="0.1.15" />
+    <!-- PDF vector, chay duoc tren Windows/Linux, khong can license -->
+    <PackageReference Include="PdfSharpCore" Version="1.3.63" />
+    <!-- Encoder Code128 / QR: chi lay ma tran module, tu ve vector -->
+    <PackageReference Include="ZXing.Net" Version="0.16.9" />
+    <!-- FontInstaller.cs doc ten family/subfamily THANG tu bang 'name' cua file .ttf (P/Invoke +
+         parse thu cong), va dang ky font qua registry bang P/Invoke advapi32.dll - khong con phu
+         thuoc System.Drawing.Common / Microsoft.Win32.Registry (moi truong build khong co mang). -->
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Nhung font that (JioType Light/Medium theo dung PMD) vao assembly - dung duoc du chay
+         tu CLI hay Web, khong phu thuoc thu muc lam viec luc chay. -->
+    <EmbeddedResource Include="..\Font\JioType-Light.ttf" LogicalName="JioType-Light.ttf" />
+    <EmbeddedResource Include="..\Font\JioType-Medium.ttf" LogicalName="JioType-Medium.ttf" />
+    <!-- Cac bien the con lai khong dung truc tiep de VE (PdfLabelRenderer/ZplEmitter chi can
+         Light/Medium o tren) nhung van nhung vao day de FontInstaller cai dat DAY DU len Windows -
+         tranh CS6 phai tu thay the bat ky bien the JioType nao (xem FontInstaller.cs). -->
+    <EmbeddedResource Include="..\Font\JioType.ttf" LogicalName="JioType.ttf" />
+    <EmbeddedResource Include="..\Font\JioType-Bold.ttf" LogicalName="JioType-Bold.ttf" />
+    <EmbeddedResource Include="..\Font\JioType-LightItalic.ttf" LogicalName="JioType-LightItalic.ttf" />
+    <EmbeddedResource Include="..\Font\JioType-MediumItalic.ttf" LogicalName="JioType-MediumItalic.ttf" />
+  </ItemGroup>
+</Project>

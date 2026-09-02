@@ -1,0 +1,13 @@
+# Chuan hoa line ending: LF trong repo, Git tu doi sang CRLF khi checkout tren Windows.
+* text=auto
+
+# Cac loai file nhi phan - khong dung LF/CRLF
+*.pdf    binary
+*.pptx   binary
+*.ttf    binary
+*.otf    binary
+*.png    binary
+*.jpg    binary
+*.ico    binary
+*.7z     binary
+*.zip    binary

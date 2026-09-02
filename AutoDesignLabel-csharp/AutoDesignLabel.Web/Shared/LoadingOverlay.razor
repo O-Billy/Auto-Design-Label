@@ -1,0 +1,40 @@
+@* Popup loading noi giua man hinh, hien % hoan thanh - dung chung cho moi tien trinh chay lau
+   (trich xuat PMD, xuat .lab...). Vi cac tien trinh backend hien la 1 loi goi kho chia nho (khong
+   co moc con de bao % that), % hien thi la uoc luong tang dan muot (easing toi ~90%) roi chot 100%
+   khi tac vu thuc su hoan tat - dung UX pattern chuan cho tac vu khong do duoc tien do chi tiet. *@
+
+@if (Visible)
+{
+    <div class="ldl-overlay">
+        <div class="ldl-card">
+            <div class="ldl-ring-wrap">
+                <svg class="ldl-ring" viewBox="0 0 120 120">
+                    <defs>
+                        <linearGradient id="ldl-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#4f9bf2" />
+                            <stop offset="100%" stop-color="#1b6ec2" />
+                        </linearGradient>
+                    </defs>
+                    <circle class="ldl-ring-track" cx="60" cy="60" r="52" />
+                    <circle class="ldl-ring-progress" cx="60" cy="60" r="52"
+                            stroke-dasharray="@RingCircumference"
+                            stroke-dashoffset="@RingOffset" />
+                </svg>
+                <div class="ldl-percent">@Percent<span>%</span></div>
+            </div>
+            <div class="ldl-label">@Label</div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public int Percent { get; set; }
+    [Parameter] public string Label { get; set; } = "";
+
+    private const double Radius = 52;
+    private double RingCircumference => 2 * Math.PI * Radius;
+    private string RingOffset =>
+        (RingCircumference * (1 - Math.Clamp(Percent, 0, 100) / 100.0))
+        .ToString(System.Globalization.CultureInfo.InvariantCulture);
+}
